@@ -1,0 +1,60 @@
+// Light theme
+$light-theme: (
+  // 主色调
+  '--primary-color': #2B5DFC,
+  '--primary-light': #ECF0FF,
+  '--primary-dark': #1E3FAD,
+  
+  // 背景色
+  '--bg-color': #F5F7FA,
+  '--bg-color-light': #FFFFFF,
+  '--bg-color-dark': #EBEEF5,
+  
+  // 文字颜色
+  '--text-primary': #2C3E50,
+  '--text-regular': #606266,
+  '--text-secondary': #909399,
+  
+  // 边框颜色
+  '--border-color': #E4E7ED,
+  '--border-light': #F2F6FC,
+  
+  // 状态颜色
+  '--success-color': #67C23A,
+  '--warning-color': #E6A23C,
+  '--danger-color': #F56C6C,
+  '--info-color': #909399
+);
+
+// Dark theme
+$dark-theme: (
+  // 主色调
+  '--primary-color': #4C6EFD,
+  '--primary-light': #1E2A4A,
+  '--primary-dark': #7B96FF,
+  
+  // 背景色
+  '--bg-color': #0A0B0E,
+  '--bg-color-light': #16171C,
+  '--bg-color-dark': #101114,
+  
+  // 文字颜色
+  '--text-primary': #FFFFFF,
+  '--text-regular': #E5EAF3,
+  '--text-secondary': #8B8C91,
+  
+  // 边框颜色
+  '--border-color': #1E1F25,
+  '--border-light': #24252C,
+  
+  // 状态颜色
+  '--success-color': #67C23A,
+  '--warning-color': #E6A23C,
+  '--danger-color': #F56C6C,
+  '--info-color': #909399,
+
+  // 阴影
+  '--box-shadow': '0 4px 16px rgba(0, 0, 0, 0.4)',
+  '--box-shadow-light': '0 2px 8px rgba(0, 0, 0, 0.3)',
+  '--box-shadow-dark': '0 8px 24px rgba(0, 0, 0, 0.5)'
+); 

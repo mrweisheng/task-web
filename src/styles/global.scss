@@ -1,0 +1,248 @@
+@use './theme' as *;
+
+:root {
+  @each $key, $value in $light-theme {
+    #{$key}: #{$value};
+  }
+}
+
+// 暗色主题
+.dark {
+  @each $key, $value in $dark-theme {
+    #{$key}: #{$value};
+  }
+
+  // 基础元素
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+  }
+
+  // 布局元素
+  .layout-container {
+    background-color: var(--bg-color);
+  }
+
+  .sidebar {
+    background-color: var(--bg-color-light);
+    border-right: 1px solid var(--border-color);
+  }
+
+  .header {
+    background-color: var(--bg-color-light);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .main-content {
+    background-color: var(--bg-color);
+  }
+
+  // 卡片样式
+  .el-card {
+    background-color: var(--bg-color-light);
+    border-color: var(--border-color);
+    box-shadow: var(--box-shadow-light);
+
+    &:hover {
+      box-shadow: var(--box-shadow);
+    }
+  }
+
+  // 菜单样式
+  .el-menu {
+    background-color: var(--bg-color-light);
+    border-color: var(--border-color);
+  }
+
+  .el-menu-item {
+    &:hover {
+      background-color: var(--bg-color-dark);
+    }
+
+    &.is-active {
+      background-color: var(--primary-light);
+      color: var(--primary-color);
+    }
+  }
+
+  // 输入框样式
+  .el-input__wrapper {
+    background-color: var(--bg-color-dark);
+    box-shadow: 0 0 0 1px var(--border-color) !important;
+
+    &:hover {
+      box-shadow: 0 0 0 1px var(--primary-color) !important;
+    }
+
+    &.is-focus {
+      box-shadow: 0 0 0 1px var(--primary-color) !important;
+    }
+  }
+
+  // 按钮样式
+  .el-button {
+    &:not(.el-button--primary):not(.el-button--link) {
+      background-color: var(--bg-color-light);
+      border-color: var(--border-color);
+      color: var(--text-regular);
+
+      &:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+      }
+    }
+  }
+
+  // 弹出层样式
+  .el-dropdown-menu,
+  .el-popover {
+    background-color: var(--bg-color-light);
+    border-color: var(--border-color);
+    box-shadow: var(--box-shadow);
+  }
+
+  // 滚动条样式
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    
+    &:hover {
+      background-color: var(--primary-color);
+    }
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: var(--bg-color-dark);
+  }
+}
+
+// 全局样式
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+// Element Plus 组件样式覆盖
+.el-card {
+  background-color: var(--bg-color-light);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--box-shadow-light);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--box-shadow);
+  }
+}
+
+.el-button {
+  &--primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    
+    &:hover {
+      background-color: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+  }
+}
+
+.el-input__wrapper {
+  background-color: var(--bg-color-light);
+  border-color: var(--border-color);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: var(--primary-color);
+  }
+  
+  &.is-focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 1px var(--primary-light);
+  }
+}
+
+// 布局相关样式
+.layout-container {
+  background-color: var(--bg-color);
+}
+
+.sidebar, .header {
+  background-color: var(--bg-color-light);
+  border-color: var(--border-color);
+}
+
+.el-empty {
+  padding: 40px 0;
+  
+  .el-empty__image {
+    opacity: 0.5;
+  }
+  
+  .el-empty__description {
+    color: var(--text-secondary);
+  }
+}
+
+.el-message {
+  min-width: 320px;
+  padding: 12px 20px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 8px;
+  
+  &--success {
+    background-color: rgba(103, 194, 58, 0.1);
+    border-color: var(--success-color);
+  }
+  
+  &--warning {
+    background-color: rgba(230, 162, 60, 0.1);
+    border-color: var(--warning-color);
+  }
+  
+  &--error {
+    background-color: rgba(245, 108, 108, 0.1);
+    border-color: var(--danger-color);
+  }
+}
+
+.el-message-box {
+  border-radius: 12px;
+  padding: 24px;
+  
+  &__header {
+    padding: 0 0 16px;
+  }
+  
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  &__content {
+    padding: 24px 0;
+    font-size: 14px;
+  }
+  
+  &__btns {
+    padding: 16px 0 0;
+  }
+}
+
+// 动画过渡
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// 添加全局过渡效果
+* {
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.3s;
+} 
