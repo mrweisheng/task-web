@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import request from '../utils/request'
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref(localStorage.getItem('token') || '')
+  const token = ref(sessionStorage.getItem('token') || '')
   const userInfo = ref({
     username: '未知用户',
     nickname: '未知用户'
@@ -14,7 +14,7 @@ export const useUserStore = defineStore('user', () => {
   const setUser = (data) => {
     if (data.token) {
       token.value = data.token
-      localStorage.setItem('token', data.token)
+      sessionStorage.setItem('token', data.token)
     }
     if (data.user) {
       userInfo.value = data.user
@@ -40,7 +40,7 @@ export const useUserStore = defineStore('user', () => {
       username: '未知用户',
       nickname: '未知用户'
     }
-    localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
   }
 
   return {

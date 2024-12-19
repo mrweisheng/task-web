@@ -3,7 +3,7 @@ import MainLayout from '../layouts/MainLayout.vue'
 import Login from '../views/Login.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/task-web/'),
   routes: [
     {
       path: '/login',

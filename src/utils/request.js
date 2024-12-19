@@ -32,7 +32,7 @@ request.interceptors.request.use(
     config.headers['X-Nonce'] = Math.random().toString(36).slice(-8)
     
     // 从安全存储获取 token
-    const token = sessionStorage.getItem('token') // 改用 sessionStorage
+    const token = sessionStorage.getItem('token') // 这里从 sessionStorage 获取
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -63,21 +63,9 @@ request.interceptors.response.use(
       // 验证签名逻辑
     }
 
-    // 检查响应类型
-    const contentType = response.headers['content-type']
-    if (!contentType?.includes('application/json')) {
-      return Promise.reject(new Error('Invalid response type'))
-    }
-
-    if (response.data.token) {
-      // 使用 sessionStorage 存储 token
-      sessionStorage.setItem('token', response.data.token)
-      // 设置 token 过期时间
-      const expiresIn = 24 * 60 * 60 * 1000 // 24小时
-      sessionStorage.setItem('tokenExpires', new Date().getTime() + expiresIn)
-    }
-
+    // 直接返回数据，不做类型检查
     return response.data
+
   },
   error => {
     if (error.response) {
@@ -150,7 +138,7 @@ const secureRequest = async (method, url, data = null, config = {}) => {
   }
 }
 
-// 导出安全的请求方法
+// 导出安全的求方法
 export default {
   get: (url, config) => secureRequest('get', url, null, config),
   post: (url, data, config) => secureRequest('post', url, data, config),
