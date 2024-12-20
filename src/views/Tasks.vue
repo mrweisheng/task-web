@@ -30,6 +30,13 @@
         <div class="task-content">
           <p class="message">{{ task.message }}</p>
           
+          <div class="task-features" v-if="task.ai_revise">
+            <el-tag size="small" type="success" effect="light">
+              <el-icon><MagicStick /></el-icon>
+              AI 优化
+            </el-tag>
+          </div>
+          
           <div v-if="task.media_urls?.length" class="media-content">
             <template v-if="task.media_type === 'image'">
               <el-image
@@ -96,7 +103,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Phone } from '@element-plus/icons-vue'
+import { Plus, Phone, MagicStick } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
 const router = useRouter()
@@ -135,7 +142,8 @@ const fetchTasks = async () => {
       status: task.status,
       createTime: task.created_at,
       media_urls: task.media_urls,
-      media_type: task.media_type
+      media_type: task.media_type,
+      ai_revise: task.ai_revise
     }))
   } catch (error) {
     ElMessage.error(error.message)
@@ -355,5 +363,24 @@ onMounted(() => {
   object-fit: contain;
   border-radius: 8px;
   background-color: var(--bg-color-dark);
+}
+
+.task-features {
+  margin: 8px 0;
+  display: flex;
+  gap: 8px;
+}
+
+.task-features .el-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 24px;
+  border-radius: 4px;
+  
+  .el-icon {
+    font-size: 14px;
+  }
 }
 </style> 

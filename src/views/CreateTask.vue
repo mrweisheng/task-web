@@ -27,6 +27,18 @@
           />
         </el-form-item>
 
+        <el-form-item>
+          <el-switch
+            v-model="form.ai_revise"
+            active-text="使用 AI 优化内容"
+            :active-value="true"
+            :inactive-value="false"
+          />
+          <div class="switch-tip">
+            开启后将自动使用AI优化文案，提升送达率
+          </div>
+        </el-form-item>
+
         <el-form-item label="媒体文件">
           <el-upload
             class="media-uploader"
@@ -168,7 +180,8 @@ const numberInput = ref('')
 const form = reactive({
   content: '',
   numbers: [],
-  file: null
+  file: null,
+  ai_revise: false
 })
 
 const acceptTypes = 'image/jpeg,image/png,image/gif,video/mp4,video/quicktime'
@@ -256,7 +269,7 @@ const handleExceed = () => {
   ElMessage.warning('只能上传一个文件')
 }
 
-// 处理文件移��
+// 处理文件移除
 const handleRemove = () => {
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
@@ -284,6 +297,7 @@ const handleSubmit = async () => {
 
     const formData = new FormData()
     formData.append('content', form.content)
+    formData.append('ai_revise', form.ai_revise)
     form.numbers.forEach(number => {
       formData.append('numbers[]', number.trim())
     })
@@ -919,5 +933,12 @@ video::-webkit-media-controls-timeline {
   .image-error {
     background-color: var(--bg-color-light);
   }
+}
+
+.switch-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  padding-left: 4px;
 }
 </style>
