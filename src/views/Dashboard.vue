@@ -1,162 +1,176 @@
 <template>
   <div class="dashboard-container">
-    <!-- 统计卡片区域 -->
-    <div class="stat-cards">
-      <el-card v-for="type in statTypes" 
-        :key="type.key"
-        class="stat-card"
-        :class="[type.key]"
-        v-loading="loading"
-        @mousemove="handleMouseMove($event, $event.target)"
-      >
-        <template #header>
-          <div class="card-header">
-            <span>{{ type.label }}</span>
-            <el-icon><component :is="type.icon" /></el-icon>
-          </div>
-        </template>
-        
-        <div class="stat-value">
-          {{ stats[type.key] }}
+    <!-- 添加骨架屏 -->
+    <el-skeleton :loading="loading" animated>
+      <template #template>
+        <div class="stat-cards">
+          <el-skeleton-item variant="card" style="width: 100%; height: 120px" />
+          <el-skeleton-item variant="card" style="width: 100%; height: 120px" />
+          <el-skeleton-item variant="card" style="width: 100%; height: 120px" />
         </div>
-        <div class="stat-label">个任务</div>
-      </el-card>
-    </div>
-
-    <!-- 用户信息卡片 -->
-    <el-card class="user-profile" 
-      :class="{ 'is-error': !userStore.user }"
-      v-loading="loading"
-    >
-      <div class="profile-header">
-        <div class="avatar-wrapper">
-          <el-avatar :size="64" :icon="User" class="user-avatar" />
-          <div class="online-status" />
-        </div>
-        <div class="user-info">
-          <h3 class="nickname">{{ userStore.userInfo.nickname || '未知用户' }}</h3>
-          <p class="username">@{{ userStore.userInfo.username || '--' }}</p>
-        </div>
-      </div>
+      </template>
       
-      <div class="profile-stats">
-        <div class="completion-chart">
-          <!-- 左侧环形图表 -->
-          <div class="chart-container">
-            <el-progress
-              type="circle"
-              :percentage="calculateCompletionRate"
-              :stroke-width="10"
-              :width="80"
-              :show-text="false"
-              :color="progressColor"
-            />
-            <div class="chart-center">
-              <span class="rate-value">{{ calculateCompletionRate }}%</span>
+      <!-- 原有内容 -->
+      <template #default>
+        <!-- 统计卡片区域 -->
+        <div class="stat-cards">
+          <el-card v-for="type in statTypes" 
+            :key="type.key"
+            class="stat-card"
+            :class="[type.key]"
+            v-loading="loading"
+            @mousemove="handleMouseMove($event, $event.target)"
+          >
+            <template #header>
+              <div class="card-header">
+                <span>{{ type.label }}</span>
+                <el-icon><component :is="type.icon" /></el-icon>
+              </div>
+            </template>
+            
+            <div class="stat-value">
+              {{ stats[type.key] }}
+            </div>
+            <div class="stat-label">个任务</div>
+          </el-card>
+        </div>
+
+        <!-- 用户信息卡片 -->
+        <el-card class="user-profile" 
+          :class="{ 'is-error': !userStore.user }"
+          v-loading="loading"
+        >
+          <div class="profile-header">
+            <div class="avatar-wrapper">
+              <el-avatar :size="64" :icon="User" class="user-avatar" />
+              <div class="online-status" />
+            </div>
+            <div class="user-info">
+              <h3 class="nickname">{{ userStore.userInfo.nickname || '未知用户' }}</h3>
+              <p class="username">@{{ userStore.userInfo.username || '--' }}</p>
             </div>
           </div>
           
-          <!-- 右侧说明 -->
-          <div class="chart-info">
-            <div class="info-header">
-              <span class="info-title">完成率</span>
-              <el-tooltip content="已完成任务占总任务的百分比" placement="top">
-                <el-icon><InfoFilled /></el-icon>
-              </el-tooltip>
-            </div>
-            <div class="info-details">
-              <div class="detail-item">
-                <div class="item-dot completed"></div>
-                <span class="item-label">已完成</span>
-                <span class="item-value">{{ stats.completedTasks }}</span>
+          <div class="profile-stats">
+            <div class="completion-chart">
+              <!-- 左侧环形图表 -->
+              <div class="chart-container">
+                <el-progress
+                  type="circle"
+                  :percentage="calculateCompletionRate"
+                  :stroke-width="10"
+                  :width="80"
+                  :show-text="false"
+                  :color="progressColor"
+                />
+                <div class="chart-center">
+                  <span class="rate-value">{{ calculateCompletionRate }}%</span>
+                </div>
               </div>
-              <div class="detail-item">
-                <div class="item-dot total"></div>
-                <span class="item-label">总任务</span>
-                <span class="item-value">{{ stats.totalTasks }}</span>
+              
+              <!-- 右侧说明 -->
+              <div class="chart-info">
+                <div class="info-header">
+                  <span class="info-title">完成率</span>
+                  <el-tooltip content="已完成任务占总任务的百分比" placement="top">
+                    <el-icon><InfoFilled /></el-icon>
+                  </el-tooltip>
+                </div>
+                <div class="info-details">
+                  <div class="detail-item">
+                    <div class="item-dot completed"></div>
+                    <span class="item-label">已完成</span>
+                    <span class="item-value">{{ stats.completedTasks }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <div class="item-dot total"></div>
+                    <span class="item-label">总任务</span>
+                    <span class="item-value">{{ stats.totalTasks }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="quick-actions">
-        <el-button type="primary" @click="router.push('/create-task')">
-          <el-icon><Plus /></el-icon>
-          创建新任务
-        </el-button>
-        <el-button @click="router.push('/tasks')">
-          <el-icon><List /></el-icon>
-          查看所有任务
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 最新任务卡片 -->
-    <el-card class="recent-task-card" v-loading="loading">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <span class="title">最新任务</span>
-            <el-tag size="small" type="info" effect="plain">
-              {{ formatDate(latestTask?.createTime) }}
-            </el-tag>
+          <div class="quick-actions">
+            <el-button type="primary" @click="router.push('/create-task')">
+              <el-icon><Plus /></el-icon>
+              创建新任务
+            </el-button>
+            <el-button @click="router.push('/tasks')">
+              <el-icon><List /></el-icon>
+              查看所有任务
+            </el-button>
           </div>
-          <el-button link @click="router.push('/tasks')">
-            查看全部
-            <el-icon class="el-icon--right"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
+        </el-card>
+
+        <!-- 最新任务卡片 -->
+        <el-card class="recent-task-card" v-loading="loading">
+          <template #header>
+            <div class="card-header">
+              <div class="header-left">
+                <span class="title">最新任务</span>
+                <el-tag size="small" type="info" effect="plain">
+                  {{ formatDate(latestTask?.createTime) }}
+                </el-tag>
+              </div>
+              <el-button link @click="router.push('/tasks')">
+                查看全部
+                <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+              </el-button>
+            </div>
+          </template>
+
+          <el-empty v-if="!latestTask" description="暂无任务" />
+          
+          <div v-else class="task-item">
+            <div class="task-circles">
+              <!-- 状态圆圈 -->
+              <div class="circle-item status">
+                <el-tag 
+                  :type="getStatusType(latestTask.status)" 
+                  class="status-tag"
+                  :effect="latestTask.status === '已完成' ? 'dark' : 'light'"
+                >
+                  <el-icon class="status-icon">
+                    <Check v-if="latestTask.status === '已完成'" />
+                    <Loading v-else-if="latestTask.status === '处理中'" />
+                    <Warning v-else />
+                  </el-icon>
+                </el-tag>
+                <span class="circle-label">{{ getStatusText(latestTask.status) }}</span>
+              </div>
+
+              <!-- 媒体类型圆圈 -->
+              <div class="circle-item media">
+                <div class="circle-icon">
+                  <el-icon>
+                    <VideoCamera v-if="latestTask.media_type === 'video'" />
+                    <Picture v-else-if="latestTask.media_type === 'image'" />
+                    <Document v-else />
+                  </el-icon>
+                </div>
+                <span class="circle-label">{{ getMediaTypeText(latestTask.media_type) }}</span>
+              </div>
+
+              <!-- 号码数量圆圈 -->
+              <div class="circle-item numbers">
+                <div class="circle-value">{{ latestTask.phoneNumbers?.length || 0 }}</div>
+                <span class="circle-label">个号码</span>
+              </div>
+            </div>
+
+            <!-- 消息内容方块 -->
+            <div class="message-box">
+              <div class="message-content">
+                <p class="message-text">{{ latestTask.message }}</p>
+                <span class="message-time">{{ formatDate(latestTask.createTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </el-card>
       </template>
-
-      <el-empty v-if="!latestTask" description="暂无任务" />
-      
-      <div v-else class="task-item">
-        <div class="task-circles">
-          <!-- 状态圆圈 -->
-          <div class="circle-item status">
-            <el-tag 
-              :type="getStatusType(latestTask.status)" 
-              class="status-tag"
-              :effect="latestTask.status === '已完成' ? 'dark' : 'light'"
-            >
-              <el-icon class="status-icon">
-                <Check v-if="latestTask.status === '已完成'" />
-                <Loading v-else-if="latestTask.status === '处理中'" />
-                <Warning v-else />
-              </el-icon>
-            </el-tag>
-            <span class="circle-label">{{ getStatusText(latestTask.status) }}</span>
-          </div>
-
-          <!-- 媒体类型圆圈 -->
-          <div class="circle-item media">
-            <div class="circle-icon">
-              <el-icon>
-                <VideoCamera v-if="latestTask.media_type === 'video'" />
-                <Picture v-else-if="latestTask.media_type === 'image'" />
-                <Document v-else />
-              </el-icon>
-            </div>
-            <span class="circle-label">{{ getMediaTypeText(latestTask.media_type) }}</span>
-          </div>
-
-          <!-- 号码数量��圈 -->
-          <div class="circle-item numbers">
-            <div class="circle-value">{{ latestTask.phoneNumbers?.length || 0 }}</div>
-            <span class="circle-label">个号码</span>
-          </div>
-        </div>
-
-        <!-- 消息内容方块 -->
-        <div class="message-box">
-          <div class="message-content">
-            <p class="message-text">{{ latestTask.message }}</p>
-            <span class="message-time">{{ formatDate(latestTask.createTime) }}</span>
-          </div>
-        </div>
-      </div>
-    </el-card>
+    </el-skeleton>
   </div>
 </template>
 

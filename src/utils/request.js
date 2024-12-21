@@ -6,7 +6,7 @@ import CryptoJS from 'crypto-js' // 需要安装此依赖
 const request = axios.create({
   // baseURL: 'http://localhost:3000',
   baseURL: 'https://task-server-zyir.onrender.com',  // master 分支用这个
-  timeout: 30000,
+  timeout: 10000,
   maxContentLength: 50 * 1024 * 1024, // 限制请求大小为 50MB
   maxBodyLength: 50 * 1024 * 1024,
   headers: {
@@ -139,9 +139,36 @@ const secureRequest = async (method, url, data = null, config = {}) => {
   }
 }
 
+// 添加请求缓存
+const cache = new Map()
+
+const cacheRequest = async (url, config = {}) => {
+  const cacheKey = `${url}-${JSON.stringify(config)}`
+  
+  // 检查缓存
+  if (cache.has(cacheKey)) {
+    const { data, timestamp } = cache.get(cacheKey)
+    // 缓存 5 分钟
+    if (Date.now() - timestamp < 5 * 60 * 1000) {
+      return data
+    }
+  }
+  
+  // 发起请求
+  const response = await request.get(url, config)
+  
+  // 更新缓存
+  cache.set(cacheKey, {
+    data: response,
+    timestamp: Date.now()
+  })
+  
+  return response
+}
+
 // 导出安全的求方法
 export default {
-  get: (url, config) => secureRequest('get', url, null, config),
+  get: (url, config) => cacheRequest(url, config),
   post: (url, data, config) => secureRequest('post', url, data, config),
   put: (url, data, config) => secureRequest('put', url, data, config),
   delete: (url, config) => secureRequest('delete', url, null, config)

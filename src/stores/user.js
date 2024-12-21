@@ -21,11 +21,18 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const profileLoaded = ref(false)
+
   const fetchUserProfile = async () => {
+    if (profileLoaded.value) {
+      return userInfo.value
+    }
+
     try {
       const data = await request.get('/api/user/profile')
       if (data.username) {
         userInfo.value = data
+        profileLoaded.value = true
       }
       return data
     } catch (error) {

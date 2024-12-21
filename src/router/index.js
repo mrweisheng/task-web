@@ -60,7 +60,7 @@ router.beforeEach((to, from, next) => {
   
   // 检查是否需要登录
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    const token = localStorage.getItem('token')
+    const token = sessionStorage.getItem('token')
     if (!token) {
       next({
         path: '/login',
