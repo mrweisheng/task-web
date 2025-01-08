@@ -19,5 +19,30 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "sass:math";`
+      }
+    }
+  },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'element-plus': ['element-plus'],
+          'vue-cropper': ['vue-cropper']
+        },
+        assetFileNames: 'assets/[name].[hash].[ext]',
+        chunkFileNames: 'assets/[name].[hash].js',
+        entryFileNames: 'assets/[name].[hash].js'
+      }
+    },
+    assetsDir: 'assets',
+    outDir: 'dist',
+    emptyOutDir: true,
+    manifest: true
   }
 })
