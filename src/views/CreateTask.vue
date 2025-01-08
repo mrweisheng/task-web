@@ -39,8 +39,29 @@
           </div>
         </el-form-item>
 
+        <el-form-item>
+          <el-switch
+            v-model="form.is_linkpreview"
+            active-text="启用超链预览"
+            :active-value="true"
+            :inactive-value="false"
+          />
+          <div class="switch-tip">
+            超链可以直接实现跳转网页及联系人
+          </div>
+        </el-form-item>
+
+        <el-form-item label="超链内容" prop="linkpreview">
+          <el-input
+            v-model="form.linkpreview"
+            :disabled="!form.is_linkpreview"
+            placeholder="仅支持https协议网址，如https://taobao.com"
+          />
+        </el-form-item>
+
         <el-form-item label="媒体文件">
           <el-upload
+            ref="uploadRef"
             class="media-uploader"
             :auto-upload="false"
             :show-file-list="true"
@@ -162,15 +183,53 @@
         </el-form-item>
       </el-form>
     </el-card>
+
+    <!-- 添加裁剪组件 -->
+    <el-dialog
+      v-model="showCropper"
+      title="裁剪图片"
+      width="800px"
+      :close-on-click-modal="false"
+      :show-close="false"
+      class="cropper-dialog"
+    >
+      <div class="cropper-container">
+        <vue-cropper
+          v-if="showCropper"
+          ref="cropperRef"
+          :img="cropperImage"
+          :info="true"
+          :full="true"
+          :fixed="true"
+          :fixedNumber="[5, 3]"
+          :canMove="true"
+          :autoCrop="true"
+          :autoCropWidth="500"
+          :autoCropHeight="300"
+          :centerBox="true"
+          :high="true"
+          outputType="jpeg"
+        />
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <p class="crop-tip">请将图片调整至 5:3 的宽高比</p>
+          <el-button type="primary" @click="cropImage">确认裁剪</el-button>
+          <el-button @click="handleCropCancel">取消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template> 
 
 <script setup>
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { ref, reactive, computed, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Document, Upload, Picture as ImageIcon, VideoCamera, Loading, Delete, Warning, Picture } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import 'vue-cropper/dist/index.css'
+import { VueCropper } from 'vue-cropper'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -181,7 +240,9 @@ const form = reactive({
   content: '',
   numbers: [],
   file: null,
-  ai_revise: false
+  ai_revise: false,
+  is_linkpreview: false,
+  linkpreview: ''
 })
 
 const acceptTypes = 'image/jpeg,image/png,image/gif,video/mp4,video/quicktime'
@@ -206,7 +267,23 @@ const rules = {
         }
       }
     }
-  ]
+  ],
+  linkpreview: [{
+    validator: (rule, value, callback) => {
+      if (form.is_linkpreview) {
+        if (!value) {
+          callback(new Error('请输入超链内容'))
+        } else if (!value.startsWith('https://')) {
+          callback(new Error('仅支持 https 协议网址'))
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    },
+    trigger: 'blur'
+  }]
 }
 
 const handleNumberInput = () => {
@@ -241,27 +318,107 @@ const getFileTypeIcon = (file) => {
   return Document
 }
 
-// 处理文件选择
-const handleFileChange = (uploadFile) => {
+// 添加响应式变量
+const showCropper = ref(false)
+const cropperImage = ref('')
+const aspectRatio = 5/3  // 设置宽高比为 5:3
+
+// 修改文件选择处理函数
+const handleFileChange = async (uploadFile) => {
   const file = uploadFile.raw
   const isImageFile = file.type.startsWith('image/')
   const isVideoFile = file.type.startsWith('video/')
   
-  // 检查文件类型
+  // 检查文件类型和大小
   if (!isImageFile && !isVideoFile) {
     ElMessage.error('只支持图片或视频文件')
     return false
   }
   
-  // 检查文件大小
   const maxSize = isImageFile ? maxImageSize : maxVideoSize
   if (file.size > maxSize) {
     ElMessage.error(`${isImageFile ? '图片' : '视频'}大小不能超过${isImageFile ? '1MB' : '5MB'}`)
+    if (uploadRef.value) {
+      uploadRef.value.clearFiles()  // 清除上传列表
+    }
     return false
   }
+
+  if (isImageFile) {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const img = new Image()
+      img.onload = async () => {
+        const currentRatio = img.width / img.height
+        if (Math.abs(currentRatio - aspectRatio) > 0.1) {
+          cropperImage.value = e.target.result
+          showCropper.value = true
+          form.file = null
+        } else {
+          try {
+            const compressedData = await compressImage(e.target.result)
+            const res = await fetch(compressedData)
+            const blob = await res.blob()
+            form.file = new File([blob], file.name, { type: 'image/jpeg' })
+            
+            // 打印压缩后的文件信息
+            console.log('最终文件信息:', {
+              name: form.file.name,
+              size: `${(form.file.size / 1024).toFixed(2)}KB`,
+              type: form.file.type
+            })
+            
+            if (form.file.size > 100 * 1024) {
+              ElMessage.warning('图片压缩后仍然超过100KB，请选择更小的图片')
+              form.file = null
+              if (uploadRef.value) {
+                uploadRef.value.clearFiles()  // 清除上传列表
+              }
+              return false
+            }
+          } catch (error) {
+            ElMessage.error('图片处理失败')
+            console.error(error)
+            form.file = null
+            return false
+          }
+        }
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  } else {
+    form.file = file  // 视频文件直接使用
+  }
   
-  form.file = file
   return true
+}
+
+// 添加裁剪完成处理函数
+const handleCropFinish = async (data) => {
+  try {
+    // 先压缩裁剪后的图片
+    const compressedData = await compressImage(data)
+    const res = await fetch(compressedData)
+    const blob = await res.blob()
+    
+    // 检查压缩后的大小
+    if (blob.size > 100 * 1024) {
+      ElMessage.warning('图片压缩后仍然超过100KB，请选择更小的图片')
+      form.file = null
+      showCropper.value = false
+      if (uploadRef.value) {
+        uploadRef.value.clearFiles()  // 清除上传列表
+      }
+      return
+    }
+    
+    form.file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    showCropper.value = false
+  } catch (error) {
+    ElMessage.error('图片处理失败')
+    console.error(error)
+  }
 }
 
 // 处理超出文件数限制
@@ -269,12 +426,19 @@ const handleExceed = () => {
   ElMessage.warning('只能上传一个文件')
 }
 
-// 处理文件移除
+// 添加 ref 引用上传组件
+const uploadRef = ref(null)
+
+// 修改处理文件移除的方法
 const handleRemove = () => {
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
   }
   form.file = null
+  // 清除上传列表
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
   return true
 }
 
@@ -298,13 +462,21 @@ const handleSubmit = async () => {
     const formData = new FormData()
     formData.append('content', form.content)
     formData.append('ai_revise', form.ai_revise)
+    formData.append('is_linkpreview', form.is_linkpreview)
+    if (form.is_linkpreview) {
+      formData.append('linkpreview', form.linkpreview)
+    }
     form.numbers.forEach(number => {
       formData.append('numbers[]', number.trim())
     })
     if (form.file) {
       formData.append('file', form.file)
     }
-    
+    // console.log("formData")
+    // for(let [key, value] of formData.entries()){
+    //   console.log(key, ':', value)
+    // }
+    // return;
     try {
       // 使用更长的超时时间处理上传请求
       const [response] = await Promise.all([
@@ -343,6 +515,112 @@ const handleSubmit = async () => {
 
 const primaryRgb = '64, 158, 255' // 主题色的 RGB 值
 document.documentElement.style.setProperty('--primary-rgb', primaryRgb)
+
+// 监听 is_linkpreview 的变化，关闭时清空内容
+watch(() => form.is_linkpreview, (newVal) => {
+  if (!newVal) {
+    form.linkpreview = ''
+  }
+})
+
+const cropperRef = ref(null)
+
+const cropImage = () => {
+  const cropper = cropperRef.value
+  if (!cropper) return
+  
+  cropper.getCropData((data) => {
+    handleCropFinish(data)
+  })
+}
+
+// 修改压缩函数，添加日志
+const compressImage = async (dataUrl, maxSize = 100 * 1024) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      console.log('原始图片尺寸:', `${img.width}x${img.height}`)
+      
+      let quality = 0.9
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      
+      // 计算合适的输出尺寸
+      let outputWidth = img.width
+      let outputHeight = img.height
+      
+      // 如果原始尺寸大于 1000x600，才进行缩放
+      if (img.width > 1000 || img.height > 600) {
+        if (img.width / img.height > 5/3) {
+          // 宽度超出更多，以宽度为基准
+          outputWidth = 1000
+          outputHeight = Math.round(1000 * (img.height / img.width))
+        } else {
+          // 高度超出更多，以高度为基准
+          outputHeight = 600
+          outputWidth = Math.round(600 * (img.width / img.height))
+        }
+      }
+      
+      canvas.width = outputWidth
+      canvas.height = outputHeight
+      
+      console.log('压缩后尺寸:', `${canvas.width}x${canvas.height}`)
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      
+      // 递归压缩
+      const compress = () => {
+        const base64 = canvas.toDataURL('image/jpeg', quality)
+        const blob = base64ToBlob(base64)
+        
+        console.log('当前压缩质量:', quality, '压缩后大小:', `${(blob.size / 1024).toFixed(2)}KB`)
+        
+        if (blob.size > maxSize && quality > 0.2) {
+          quality -= 0.1
+          compress()
+        } else if (blob.size > maxSize) {
+          reject(new Error('无法压缩到目标大小'))
+        } else {
+          resolve(base64)
+        }
+      }
+      
+      compress()
+    }
+    img.onerror = reject
+    img.src = dataUrl
+  })
+}
+
+// 辅助函数：base64 转 Blob
+const base64ToBlob = (base64) => {
+  const parts = base64.split(';base64,')
+  const contentType = parts[0].split(':')[1]
+  const raw = window.atob(parts[1])
+  const rawLength = raw.length
+  const uInt8Array = new Uint8Array(rawLength)
+  
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i)
+  }
+  
+  return new Blob([uInt8Array], { type: contentType })
+}
+
+// 在 script setup 中添加组件注册
+const components = {
+  VueCropper
+}
+
+// 修改裁剪对话框的取消处理
+const handleCropCancel = () => {
+  showCropper.value = false
+  // 清除文件列表
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+}
 </script> 
 
 <style scoped>
@@ -760,144 +1038,26 @@ document.documentElement.style.setProperty('--primary-rgb', primaryRgb)
   border: 1px solid var(--border-color);
 }
 
-.image-preview,
-.video-preview {
+.image-preview {
   width: 100%;
-  max-height: 300px;
+  aspect-ratio: 5/3;  /* 强制 5:3 比例 */
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 8px;
   background-color: var(--bg-color-light);
-}
-
-.dark {
-  .file-preview {
-    background-color: var(--bg-color-light);
-    border: 1px solid var(--border-color);
-  }
-  
-  .image-preview,
-  .video-preview {
-    background-color: var(--bg-color-dark);
-  }
-  
-  :deep(.el-upload-dragger) {
-    background-color: var(--bg-color-dark);
-    border-color: var(--border-color);
-    
-    &:hover {
-      background-color: var(--bg-color-light);
-      border-color: var(--primary-color);
-    }
-  }
-  
-  .upload-icon {
-    color: var(--text-secondary);
-  }
-  
-  .upload-text {
-    color: var(--text-regular);
-    
-    .upload-tip {
-      color: var(--text-secondary);
-    }
-  }
-}
-
-.fullscreen-loading {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  animation: fadeIn 0.3s ease;
-}
-
-.loading-content {
-  text-align: center;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 32px 48px;
-  border-radius: 16px;
-  backdrop-filter: blur(4px);
-}
-
-.loading-icon {
-  font-size: 56px;
-  color: var(--primary-color);
-  filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.5));
-  animation: rotate 1.5s linear infinite;
-}
-
-.loading-text {
-  margin-top: 16px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* 暗色模式适配 */
-.dark {
-  .fullscreen-loading {
-    background-color: rgba(0, 0, 0, 0.85);
-  }
-
-  .loading-content {
-    color: var(--text-primary);
-  }
-}
-
-.preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 0 8px;
-}
-
-.file-type {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-regular);
-  font-weight: 500;
-  
-  .el-icon {
-    font-size: 18px;
-  }
+  border: 1px solid var(--border-color);
 }
 
 .image-placeholder,
 .image-error {
+  width: 100%;
+  aspect-ratio: 5/3;  /* 保持与图片预览相同的比例 */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 200px;
   background-color: var(--bg-color-dark);
   color: var(--text-secondary);
+  border-radius: 8px;
   
   .el-icon {
     font-size: 48px;
@@ -940,5 +1100,30 @@ video::-webkit-media-controls-timeline {
   color: var(--el-text-color-secondary);
   margin-top: 4px;
   padding-left: 4px;
+}
+
+.crop-tip {
+  color: var(--el-text-color-secondary);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+:deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.cropper-dialog :deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+.cropper-container {
+  height: 400px;
+  width: 100%;
+}
+
+:deep(.vue-cropper) {
+  height: 100%;
+  width: 100%;
 }
 </style>

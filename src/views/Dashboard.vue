@@ -98,8 +98,11 @@
         <div class="card-header">
           <div class="header-left">
             <span class="title">最新任务</span>
-            <el-tag size="small" type="info" effect="plain">
-              {{ formatDate(latestTask?.createTime) }}
+            <el-tag size="small" type="info" effect="plain" v-if="latestTask">
+              {{ formatDate(latestTask.createTime) }}
+            </el-tag>
+            <el-tag size="small" type="info" effect="plain" v-else>
+              暂无数据
             </el-tag>
           </div>
           <el-button link @click="router.push('/tasks')">
@@ -141,7 +144,7 @@
             <span class="circle-label">{{ getMediaTypeText(latestTask.media_type) }}</span>
           </div>
 
-          <!-- 号码数量��圈 -->
+          <!-- 号码数量圆圈 -->
           <div class="circle-item numbers">
             <div class="circle-value">{{ latestTask.phoneNumbers?.length || 0 }}</div>
             <span class="circle-label">个号码</span>
@@ -151,7 +154,14 @@
         <!-- 消息内容方块 -->
         <div class="message-box">
           <div class="message-content">
-            <p class="message-text">{{ latestTask.message }}</p>
+            <p class="message-text">{{ latestTask.content }}</p>
+            <!-- 添加超链预览显示 -->
+            <div v-if="latestTask.is_linkpreview && latestTask.linkpreview" class="link-preview">
+              <el-icon><Link /></el-icon>
+              <a :href="latestTask.linkpreview" target="_blank" rel="noopener noreferrer">
+                {{ latestTask.linkpreview }}
+              </a>
+            </div>
             <span class="message-time">{{ formatDate(latestTask.createTime) }}</span>
           </div>
         </div>
@@ -167,7 +177,7 @@ import { useUserStore } from '../stores/user'
 import { 
   DataLine, Calendar, Check, User, Timer, 
   TrendCharts, Plus, List, ArrowRight, Phone,
-  Picture, VideoCamera, Loading, Document, Clock, VideoPlay, InfoFilled
+  Picture, VideoCamera, Loading, Document, Clock, VideoPlay, InfoFilled, Link
 } from '@element-plus/icons-vue'
 import { ElMessage, ElImageViewer, ElMessageBox } from 'element-plus'
 import request from '../utils/request'
@@ -219,22 +229,28 @@ const fetchLatestTask = async () => {
     if (response) {
       latestTask.value = {
         id: response.id,
-        message: response.content,
+        content: response.content,
         phoneNumbers: response.numbers,
         status: response.status,
         createTime: response.created_at,
         media_type: response.media_type,
-        media_urls: response.media_urls
+        media_urls: response.media_urls,
+        is_linkpreview: response.is_linkpreview,
+        linkpreview: response.linkpreview
       }
     }
   } catch (error) {
     console.error('获取最新任务失败:', error)
     if (error.response?.status === 401) {
       router.push('/login')
-    } else if (error.response?.status !== 404) {
-      ElMessage.error('获取最新任务失败')
+    } else {
+      // 如果是"未找到任务"，直接设置为 null，不显示错误提示
+      latestTask.value = null
+      // 只有在不是"未找到任务"的情况下才显示错误提示
+      if (error.response?.data?.message !== '未找到任务') {
+        ElMessage.error('获取最新任务失败')
+      }
     }
-    latestTask.value = null
   }
 }
 
@@ -748,21 +764,51 @@ const progressColor = computed(() => {
       justify-content: space-between;
       
       .message-text {
-        font-size: 14px;
-        line-height: 1.6;
-        color: var(--el-text-color-primary);
         margin: 0;
+        word-break: break-all;  /* 允许在任意字符间断行 */
+        white-space: pre-wrap;  /* 保留空格和换行符 */
+        line-height: 1.5;
+        max-height: 4.5em;     /* 显示3行 */
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 3;  /* 限制3行 */
         -webkit-box-orient: vertical;
       }
       
+      .link-preview {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        padding: 8px;
+        background: var(--el-bg-color-page);
+        border-radius: 4px;
+        font-size: 14px;
+        
+        .el-icon {
+          color: var(--el-color-primary);
+          flex-shrink: 0;  /* 图标不缩小 */
+        }
+        
+        a {
+          color: var(--el-color-primary);
+          text-decoration: none;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;  /* 链接文本单行显示，超出部分显示省略号 */
+          
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+      
       .message-time {
+        margin-top: 8px;
+        display: block;
         font-size: 12px;
         color: var(--el-text-color-secondary);
-        margin-top: 8px;
       }
     }
   }
@@ -1128,6 +1174,30 @@ const progressColor = computed(() => {
 .dark {
   .completion-chart {
     background: var(--el-bg-color);
+  }
+}
+
+.link-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--el-bg-color-page);
+  border-radius: 4px;
+  font-size: 14px;
+  
+  .el-icon {
+    color: var(--el-color-primary);
+  }
+  
+  a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 </style> 

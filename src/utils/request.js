@@ -4,8 +4,8 @@ import router from '../router'
 import CryptoJS from 'crypto-js' // 需要安装此依赖
 
 const request = axios.create({
-  baseURL: 'http://localhost:3000',
-  // baseURL: 'https://task-server-zyir.onrender.com',  // master 分支用这个
+  // baseURL: 'http://localhost:3000',
+  baseURL: 'https://task-server-zyir.onrender.com',  // master 分支用这个/
   timeout: 30000,
   maxContentLength: 50 * 1024 * 1024, // 限制请求大小为 50MB
   maxBodyLength: 50 * 1024 * 1024,
@@ -58,15 +58,7 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   response => {
-    // 验证响应签名
-    const signature = response.headers['x-response-signature']
-    if (signature) {
-      // 验证签名逻辑
-    }
-
-    // 直接返回数据，不做类型检查
     return response.data
-
   },
   error => {
     if (error.response) {
@@ -84,7 +76,10 @@ request.interceptors.response.use(
           ElMessage.error('请求过于频繁，请稍后再试')
           break
         default:
-          ElMessage.error(error.response.data?.message || '请求失败')
+          // 如果是"未找到任务"的消息，不显示错误提示
+          if (error.response.data?.message !== '未找到任务') {
+            ElMessage.error(error.response.data?.message || '请求失败')
+          }
       }
     } else if (error.code === 'ECONNABORTED') {
       ElMessage.error('请求超时，请检查网络连接')

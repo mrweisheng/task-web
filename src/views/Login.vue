@@ -13,9 +13,9 @@
         class="login-form"
       >
         <el-form-item prop="username">
-          <el-input
+          <el-input 
             v-model="form.username"
-            :placeholder="isLogin ? '用户名' : '设置用户名'"
+            placeholder="用户名"
             :prefix-icon="User"
           />
         </el-form-item>
@@ -24,25 +24,8 @@
           <el-input
             v-model="form.password"
             type="password"
-            :placeholder="isLogin ? '密码' : '设置密码'"
+            placeholder="密码"
             :prefix-icon="Lock"
-          />
-        </el-form-item>
-
-        <el-form-item v-if="!isLogin" prop="confirmPassword">
-          <el-input
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="确认密码"
-            :prefix-icon="Lock"
-          />
-        </el-form-item>
-
-        <el-form-item v-if="!isLogin" prop="nickname">
-          <el-input
-            v-model="form.nickname"
-            placeholder="设置昵称"
-            :prefix-icon="UserFilled"
           />
         </el-form-item>
 
@@ -53,16 +36,10 @@
             class="submit-button"
             @click="handleSubmit"
           >
-            {{ isLogin ? '登录' : '注册' }}
+            登录
           </el-button>
         </el-form-item>
       </el-form>
-
-      <div class="form-footer">
-        <el-button link type="primary" @click="toggleMode">
-          {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
-        </el-button>
-      </div>
     </div>
   </div>
 </template>
@@ -149,9 +126,12 @@ const handleSubmit = async () => {
         token: response.token,
         user: response.user
       })
+      
       await userStore.fetchUserProfile()
+      
       ElMessage.success('登录成功')
-      router.push('/')
+      
+      await router.push('/')
     } else {
       ElMessage.success('注册成功')
       isLogin.value = true
@@ -159,6 +139,7 @@ const handleSubmit = async () => {
       form.confirmPassword = ''
     }
   } catch (error) {
+    console.error('登录失败:', error)
     ElMessage.error(error.response?.data?.message || error.message)
   } finally {
     loading.value = false

@@ -28,12 +28,23 @@
         </template>
 
         <div class="task-content">
-          <p class="message">{{ task.message }}</p>
+          <p class="message">{{ task.content }}</p>
           
-          <div class="task-features" v-if="task.ai_revise">
-            <el-tag size="small" type="success" effect="light">
+          <div v-if="task.is_linkpreview && task.linkpreview" class="link-preview">
+            <el-icon><Link /></el-icon>
+            <a :href="task.linkpreview" target="_blank" rel="noopener noreferrer">
+              {{ task.linkpreview }}
+            </a>
+          </div>
+          
+          <div class="task-features">
+            <el-tag size="small" type="success" effect="light" v-if="task.ai_revise">
               <el-icon><MagicStick /></el-icon>
               AI 优化
+            </el-tag>
+            <el-tag size="small" type="primary" effect="light" v-if="task.is_linkpreview">
+              <el-icon><Link /></el-icon>
+              超链跳转
             </el-tag>
           </div>
           
@@ -86,13 +97,6 @@
           >
             标记完成
           </el-button>
-          <el-button 
-            type="danger" 
-            link
-            @click="handleTaskDelete(task.id)"
-          >
-            删除任务
-          </el-button>
         </div>
       </el-card>
     </div>
@@ -103,7 +107,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Phone, MagicStick } from '@element-plus/icons-vue'
+import { Plus, Phone, MagicStick, Link } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
 const router = useRouter()
@@ -137,13 +141,15 @@ const fetchTasks = async () => {
     const response = await request.get('/api/tasks')
     tasks.value = response.map(task => ({
       id: task.id,
-      message: task.content,
+      content: task.content,
       phoneNumbers: task.numbers,
       status: task.status,
       createTime: task.created_at,
       media_urls: task.media_urls,
       media_type: task.media_type,
-      ai_revise: task.ai_revise
+      ai_revise: task.ai_revise,
+      is_linkpreview: task.is_linkpreview,
+      linkpreview: task.linkpreview
     }))
   } catch (error) {
     ElMessage.error(error.message)
@@ -158,22 +164,6 @@ const handleTaskComplete = async (taskId) => {
   } catch (error) {
     ElMessage.error(error.message)
   }
-}
-
-const handleTaskDelete = (taskId) => {
-  ElMessageBox.confirm('确定要删除该任务吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await request.delete(`/api/tasks/${taskId}`)
-      ElMessage.success('任务已删除')
-      fetchTasks()
-    } catch (error) {
-      ElMessage.error(error.message)
-    }
-  })
 }
 
 onMounted(() => {
@@ -366,21 +356,48 @@ onMounted(() => {
 }
 
 .task-features {
-  margin: 8px 0;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  margin-top: 12px;
+  
+  .el-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    
+    .el-icon {
+      font-size: 14px;
+    }
+  }
 }
 
-.task-features .el-tag {
+.link-preview {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  height: 24px;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 8px 12px;
+  background: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 4px;
+  font-size: 14px;
   
   .el-icon {
-    font-size: 14px;
+    color: var(--el-color-primary);
+    flex-shrink: 0;
+  }
+  
+  a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 </style> 
