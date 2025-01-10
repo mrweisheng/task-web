@@ -1,31 +1,34 @@
 <template>
-  <div class="layout-container">
-    <!-- 侧边栏 -->
-    <el-aside :width="isCollapse ? '64px' : '220px'" class="sidebar">
-      <div class="logo-container">
-        <img src="../assets/logo.png" alt="Logo" class="logo">
-        <h3 v-if="!isCollapse">任务管理平台</h3>
+  <el-container class="layout-container">
+    <el-aside width="200px" class="aside">
+      <div class="logo">
+        <img src="../assets/logo.png" alt="Logo">
+        <span>任务管理平台</span>
       </div>
       
       <el-menu
         :default-active="route.path"
-        class="sidebar-menu"
-        router
-        :collapse="isCollapse"
+        class="el-menu-vertical"
+        :router="true"
       >
         <el-menu-item index="/dashboard">
-          <el-icon><DataBoard /></el-icon>
-          <template #title>我的面板</template>
+          <el-icon><Monitor /></el-icon>
+          <span>我的面板</span>
         </el-menu-item>
         
         <el-menu-item index="/tasks">
           <el-icon><List /></el-icon>
-          <template #title>我的任务</template>
+          <span>我的任务</span>
         </el-menu-item>
         
-        <el-menu-item index="/create-task">
-          <el-icon><Plus /></el-icon>
-          <template #title>创建任务</template>
+        <el-menu-item index="/create-normal-message">
+          <el-icon><Message /></el-icon>
+          <span>普通消息</span>
+        </el-menu-item>
+        
+        <el-menu-item index="/create-link-message">
+          <el-icon><Link /></el-icon>
+          <span>超链消息</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -84,7 +87,7 @@
         </router-view>
       </el-main>
     </el-container>
-  </div>
+  </el-container>
 </template>
 
 <script setup>
@@ -101,7 +104,10 @@ import {
   CaretBottom,
   Moon,
   Sunny,
-  DataBoard
+  DataBoard,
+  Monitor,
+  Message,
+  Link
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import UserInfo from '../components/UserInfo.vue'
@@ -158,13 +164,13 @@ const handleLogout = () => {
   display: flex;
 }
 
-.sidebar {
+.aside {
   background-color: var(--bg-color-light);
   border-right: 1px solid var(--border-color);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.logo-container {
+.logo {
   height: 60px;
   display: flex;
   align-items: center;
@@ -173,7 +179,7 @@ const handleLogout = () => {
   overflow: hidden;
 }
 
-.logo {
+.logo img {
   width: 32px;
   height: 32px;
   margin-right: 12px;
@@ -181,7 +187,7 @@ const handleLogout = () => {
   flex-shrink: 0;
 }
 
-.logo-container h3 {
+.logo span {
   margin: 0;
   font-size: 16px;
   color: #333;

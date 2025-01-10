@@ -109,8 +109,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Phone, MagicStick, Link } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { useUserStore } from '../stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const tasks = ref([])
 
 const getStatusType = (status) => {
@@ -166,8 +168,17 @@ const handleTaskComplete = async (taskId) => {
   }
 }
 
+const initData = async () => {
+  try {
+    await userStore.fetchUserProfile()
+    await fetchTasks()
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+  }
+}
+
 onMounted(() => {
-  fetchTasks()
+  initData()
 })
 </script>
 

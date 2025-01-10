@@ -81,7 +81,7 @@
       </div>
 
       <div class="quick-actions">
-        <el-button type="primary" @click="router.push('/create-task')">
+        <el-button type="primary" @click="router.push('/create-normal-message')">
           <el-icon><Plus /></el-icon>
           创建新任务
         </el-button>

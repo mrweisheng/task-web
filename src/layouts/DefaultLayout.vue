@@ -23,6 +23,15 @@
 
 <script setup>
 import UserInfo from '../components/UserInfo.vue'
+import { useUserStore } from '../stores/user'
+import { onMounted } from 'vue'
+
+const userStore = useUserStore()
+
+onMounted(() => {
+  // 页面刷新时重新获取用户信息
+  userStore.getUserInfo()
+})
 </script>
 
 <style scoped>

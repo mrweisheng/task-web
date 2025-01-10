@@ -1,11 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import Login from '../views/Login.vue'
-
-const base = process.env.RENDER ? '/' : '/task-web/'
+import DefaultLayout from '../layouts/DefaultLayout.vue'
 
 const router = createRouter({
-  history: createWebHistory(base),
+  history: createWebHistory('/task-web/'),
   routes: [
     {
       path: '/login',
@@ -42,38 +41,26 @@ const router = createRouter({
           }
         },
         {
-          path: 'create-task',
-          name: 'CreateTask',
-          component: () => import('../views/CreateTask.vue'),
+          path: 'create-normal-message',
+          name: 'CreateNormalMessage',
+          component: () => import('../views/CreateNormalMessage.vue'),
           meta: {
-            title: '创建任务',
+            title: '创建普通消息',
+            requiresAuth: true
+          }
+        },
+        {
+          path: 'create-link-message',
+          name: 'CreateLinkMessage',
+          component: () => import('../views/CreateLinkMessage.vue'),
+          meta: {
+            title: '创建超链消息',
             requiresAuth: true
           }
         }
       ]
     }
   ]
-})
-
-// 路由守卫
-router.beforeEach((to, from, next) => {
-  // 设置页面标题
-  document.title = to.meta.title ? `${to.meta.title} - 任务管理平台` : '任务管理平台'
-  
-  // 检查是否需要登录
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    const token = sessionStorage.getItem('token')
-    if (!token) {
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath }
-      })
-    } else {
-      next()
-    }
-  } else {
-    next()
-  }
 })
 
 export default router 

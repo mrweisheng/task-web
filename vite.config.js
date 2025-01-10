@@ -6,7 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.RENDER ? '/' : '/task-web/',
+  base: '/task-web/',
   plugins: [
     vue(),
     vueDevTools(),
@@ -28,13 +28,12 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 1500,
+    assetsDir: 'static',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'element-plus': ['element-plus'],
-          'vue-cropper': ['vue-cropper']
-        }
+        assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
+        chunkFileNames: 'static/js/[name]-[hash].js',
+        entryFileNames: 'static/js/[name]-[hash].js'
       }
     }
   }
