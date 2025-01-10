@@ -6,7 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/task-web/',
+  base: process.env.NODE_ENV === 'production' ? '/task-web/' : '/',
   plugins: [
     vue(),
     vueDevTools(),
@@ -34,15 +34,8 @@ export default defineConfig({
         manualChunks: {
           'element-plus': ['element-plus'],
           'vue-cropper': ['vue-cropper']
-        },
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        chunkFileNames: 'assets/[name].[hash].js',
-        entryFileNames: 'assets/[name].[hash].js'
+        }
       }
-    },
-    assetsDir: 'assets',
-    outDir: 'dist',
-    emptyOutDir: true,
-    manifest: true
+    }
   }
 })
