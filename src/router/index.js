@@ -2,8 +2,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import Login from '../views/Login.vue'
 
+const base = process.env.RENDER ? '/' : '/task-web/'
+
 const router = createRouter({
-  history: createWebHistory('/task-web/'),
+  history: createWebHistory(base),
   routes: [
     {
       path: '/login',
