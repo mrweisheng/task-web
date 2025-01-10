@@ -8,7 +8,7 @@ const isRender = process.env.RENDER === 'true'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: isRender ? '/task-web/' : '/',
+  base: isRender ? 'task-web' : '/',
   plugins: [
     vue(),
     vueDevTools(),
