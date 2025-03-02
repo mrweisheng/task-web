@@ -30,6 +30,11 @@
           <el-icon><Link /></el-icon>
           <span>超链消息</span>
         </el-menu-item>
+        
+        <el-menu-item index="/orders">
+          <el-icon><Tickets /></el-icon>
+          <span>我的订单</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -107,7 +112,8 @@ import {
   DataBoard,
   Monitor,
   Message,
-  Link
+  Link,
+  Tickets
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import UserInfo from '../components/UserInfo.vue'
@@ -118,22 +124,18 @@ const userStore = useUserStore()
 const isCollapse = ref(false)
 const isDark = ref(false)
 
-// 获取用户信息
-const fetchUserInfo = async () => {
+// 添加初始化用户信息的方法
+const initUserInfo = async () => {
   try {
     await userStore.fetchUserProfile()
   } catch (error) {
-    if (error.response?.status === 401) {
-      userStore.logout()
-      router.push('/login')
-    }
+    console.error('获取用户信息失败:', error)
   }
 }
 
+// 在组件挂载时获取用户信息
 onMounted(() => {
-  if (userStore.isLoggedIn) {
-    fetchUserInfo()
-  }
+  initUserInfo()
 })
 
 const toggleCollapse = () => {

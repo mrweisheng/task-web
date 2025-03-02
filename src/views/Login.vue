@@ -56,24 +56,10 @@ const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
-const isLogin = ref(true)
-
 const form = reactive({
   username: '',
-  password: '',
-  confirmPassword: '',
-  nickname: ''
+  password: ''
 })
-
-const validateConfirmPassword = (rule, value, callback) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'))
-  } else if (value !== form.password) {
-    callback(new Error('两次输入密码不一致'))
-  } else {
-    callback()
-  }
-}
 
 const rules = {
   username: [
@@ -83,26 +69,7 @@ const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度应在6-20个字符之间', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: ['blur', 'change'] }
-  ],
-  nickname: [
-    { required: true, message: '请输入昵称', trigger: 'blur' },
-    { min: 2, max: 20, message: '昵称长度应在2-20个字符之间', trigger: 'blur' }
   ]
-}
-
-const toggleMode = () => {
-  isLogin.value = !isLogin.value
-  form.username = ''
-  form.password = ''
-  form.confirmPassword = ''
-  form.nickname = ''
-  if (formRef.value) {
-    formRef.value.clearValidate()
-  }
 }
 
 const handleSubmit = async () => {
@@ -112,32 +79,21 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    const url = isLogin.value ? '/api/user/login' : '/api/user/register'
-    const submitData = {
+    const response = await request.post('/api/user/login', {
       username: form.username,
-      password: form.password,
-      ...(isLogin.value ? {} : { nickname: form.nickname })
-    }
+      password: form.password
+    })
     
-    const response = await request.post(url, submitData)
+    userStore.setUser({
+      token: response.token,
+      user: response.user
+    })
     
-    if (isLogin.value) {
-      userStore.setUser({
-        token: response.token,
-        user: response.user
-      })
-      
-      await userStore.fetchUserProfile()
-      
-      ElMessage.success('登录成功')
-      
-      await router.push('/')
-    } else {
-      ElMessage.success('注册成功')
-      isLogin.value = true
-      form.password = ''
-      form.confirmPassword = ''
-    }
+    await userStore.fetchUserProfile()
+    
+    ElMessage.success('登录成功')
+    
+    await router.push('/')
   } catch (error) {
     console.error('登录失败:', error)
     ElMessage.error(error.response?.data?.message || error.message)
@@ -211,4 +167,4 @@ const handleSubmit = async () => {
 :deep(.el-button--link) {
   height: auto;
 }
-</style> 
+</style>

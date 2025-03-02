@@ -57,6 +57,15 @@ const router = createRouter({
             title: '创建超链消息',
             requiresAuth: true
           }
+        },
+        {
+          path: 'orders',
+          name: 'Orders',
+          component: () => import('../views/Orders.vue'),
+          meta: {
+            title: '我的订单',
+            requiresAuth: true
+          }
         }
       ]
     }

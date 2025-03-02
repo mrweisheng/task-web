@@ -134,6 +134,20 @@
             @input="handleNumberInput"
             @blur="handleNumberBlur"
           />
+          <div class="points-info" :class="{ 'is-warning': !hasEnoughPoints }">
+            <el-icon><InfoFilled /></el-icon>
+            <span>
+              预计消耗 {{ totalPoints }} 积分
+              <template v-if="hasEnoughPoints">
+                (当前余额: {{ userStore.userBalance }} 积分)
+              </template>
+              <template v-else>
+                <el-tag type="danger" size="small">
+                  余额不足，当前余额: {{ userStore.userBalance }} 积分
+                </el-tag>
+              </template>
+            </span>
+          </div>
         </el-form-item>
 
         <div class="number-preview" v-if="form.numbers.length">
@@ -163,42 +177,6 @@
         </el-form-item>
       </el-form>
     </el-card>
-
-    <!-- 添加裁剪组件 -->
-    <el-dialog
-      v-model="showCropper"
-      title="裁剪图片"
-      width="800px"
-      :close-on-click-modal="false"
-      :show-close="false"
-      class="cropper-dialog"
-    >
-      <div class="cropper-container">
-        <vue-cropper
-          v-if="showCropper"
-          ref="cropperRef"
-          :img="cropperImage"
-          :info="true"
-          :full="true"
-          :fixed="true"
-          :fixedNumber="[5, 3]"
-          :canMove="true"
-          :autoCrop="true"
-          :autoCropWidth="500"
-          :autoCropHeight="300"
-          :centerBox="true"
-          :high="true"
-          outputType="jpeg"
-        />
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <p class="crop-tip">请将图片调整至 5:3 的宽高比</p>
-          <el-button type="primary" @click="cropImage">确认裁剪</el-button>
-          <el-button @click="handleCropCancel">取消</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template> 
 
@@ -206,7 +184,7 @@
 import { ref, reactive, computed, onUnmounted, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Document, Upload, Picture as ImageIcon, VideoCamera, Loading, Delete, Warning, Picture } from '@element-plus/icons-vue'
+import { Document, Upload, Picture as ImageIcon, VideoCamera, Loading, Delete, Warning, Picture, InfoFilled } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import 'vue-cropper/dist/index.css'
 import { VueCropper } from 'vue-cropper'
@@ -233,7 +211,7 @@ const maxVideoSize = 5 * 1024 * 1024  // 5MB
 const rules = {
   content: [
     { required: true, message: '请输入消息内容', trigger: 'blur' },
-    { min: 1, max: 500, message: '消息长度应在1-500字符之间', trigger: 'blur' }
+    { min: 1, max: 1000, message: '消息长度应在1-1000字符之间', trigger: 'blur' }
   ],
   numbers: [
     { 
@@ -258,12 +236,38 @@ const handleNumberInput = () => {
     .filter(num => num !== '')
   
   form.numbers = numbers
+  calculatePoints(false)  // 不显示警告
 }
 
-const handleNumberBlur = () => {
-  if (form.numbers.length > 0) {
-    numberInput.value = form.numbers.join('\n')
+const numberCount = ref(0)
+
+const handleNumberBlur = (e) => {
+  const input = e.target.value
+  if (!input) return
+
+  // 1. 按多种分隔符分割成完整的电话号码数组并去重
+  const numbers = input
+    .split(/[,，;；\s]+/) // 支持中英文逗号分号和空格
+    .map(num => num.trim())
+    .filter(num => num) // 过滤空值
+    .filter((num, index, self) => self.indexOf(num) === index) // 去重完整号码
+
+  // 2. 更新表单数据和输入框的值（统一使用空格分隔）
+  form.numbers = numbers
+  numberInput.value = numbers.join(' ') // 输出时统一用空格分隔
+  numberCount.value = numbers.length
+
+  // 3. 如果有重复号码，提示用户
+  const originalNumbers = input.split(/[,，;；\s]+/).filter(num => num.trim())
+  if (originalNumbers.length > numbers.length) {
+    ElMessage({
+      message: `已自动去除 ${originalNumbers.length - numbers.length} 个重复号码`,
+      type: 'info'
+    })
   }
+
+  // 4. 使用去重后的号码数量计算积分
+  calculatePoints(false)
 }
 
 // 文件类型判断
@@ -300,11 +304,12 @@ const handleFileChange = async (uploadFile) => {
     return false
   }
   
-  const maxSize = isImageFile ? maxImageSize : maxVideoSize
+  // 图片 1MB，视频 5MB
+  const maxSize = isImageFile ? 1024 * 1024 : 5 * 1024 * 1024
   if (file.size > maxSize) {
     ElMessage.error(`${isImageFile ? '图片' : '视频'}大小不能超过${isImageFile ? '1MB' : '5MB'}`)
     if (uploadRef.value) {
-      uploadRef.value.clearFiles()  // 清除上传列表
+      uploadRef.value.clearFiles()
     }
     return false
   }
@@ -312,44 +317,28 @@ const handleFileChange = async (uploadFile) => {
   if (isImageFile) {
     const reader = new FileReader()
     reader.onload = async (e) => {
-      const img = new Image()
-      img.onload = async () => {
-        const currentRatio = img.width / img.height
-        if (Math.abs(currentRatio - aspectRatio) > 0.1) {
-          cropperImage.value = e.target.result
-          showCropper.value = true
+      try {
+        // 直接进行压缩
+        const compressedData = await compressImage(e.target.result)
+        const res = await fetch(compressedData)
+        const blob = await res.blob()
+        form.file = new File([blob], file.name, { type: 'image/jpeg' })
+        
+        // 检查压缩后的大小，限制改为 200KB
+        if (form.file.size > 200 * 1024) {
+          ElMessage.warning('图片压缩后仍然超过200KB，请选择更小的图片')
           form.file = null
-        } else {
-          try {
-            const compressedData = await compressImage(e.target.result)
-            const res = await fetch(compressedData)
-            const blob = await res.blob()
-            form.file = new File([blob], file.name, { type: 'image/jpeg' })
-            
-            // 打印压缩后的文件信息
-            console.log('最终文件信息:', {
-              name: form.file.name,
-              size: `${(form.file.size / 1024).toFixed(2)}KB`,
-              type: form.file.type
-            })
-            
-            if (form.file.size > 100 * 1024) {
-              ElMessage.warning('图片压缩后仍然超过100KB，请选择更小的图片')
-              form.file = null
-              if (uploadRef.value) {
-                uploadRef.value.clearFiles()  // 清除上传列表
-              }
-              return false
-            }
-          } catch (error) {
-            ElMessage.error('图片处理失败')
-            console.error(error)
-            form.file = null
-            return false
+          if (uploadRef.value) {
+            uploadRef.value.clearFiles()
           }
+          return false
         }
+      } catch (error) {
+        ElMessage.error('图片处理失败')
+        console.error(error)
+        form.file = null
+        return false
       }
-      img.src = e.target.result
     }
     reader.readAsDataURL(file)
   } else {
@@ -414,20 +403,54 @@ onUnmounted(() => {
   }
 })
 
+const userStore = useUserStore()
+
+// 添加校验余额的方法
+const checkBalance = async () => {
+  try {
+    // 获取消息积分配置
+    await userStore.fetchMessagePoints()
+    // 获取最新的用户信息（包含余额）
+    const userProfile = await userStore.fetchUserProfile()
+    
+    const messageType = '普通消息'
+    const pointsPerMessage = userStore.messagePoints[messageType].points
+    const totalPoints = form.numbers.length * pointsPerMessage
+    
+    if (userProfile.balance < totalPoints) {
+      ElMessage.error(`余额不足！发送${form.numbers.length}条${messageType}需要${totalPoints}积分，当前余额${userProfile.balance}积分`)
+      return false
+    }
+    
+    return true
+  } catch (error) {
+    ElMessage.error('校验余额失败，请重试')
+    return false
+  }
+}
+
+// 修改提交方法
 const handleSubmit = async () => {
   if (!formRef.value) return
   
   try {
+    // 先进行表单验证
     await formRef.value.validate()
+    
+    // 添加余额校验
+    const hasEnoughBalance = await checkBalance()
+    if (!hasEnoughBalance) {
+      return
+    }
+    
+    // 立即显示加载遮罩
     loading.value = true
-
-    // 添加最小延迟，确保动画效果
-    const minDelay = new Promise(resolve => setTimeout(resolve, 800))
-
+    
     const formData = new FormData()
     formData.append('content', form.content)
     formData.append('ai_revise', form.ai_revise)
     formData.append('is_linkpreview', form.is_linkpreview)
+    formData.append('message_type', '普通消息')
     if (form.is_linkpreview) {
       formData.append('linkpreview', form.linkpreview)
     }
@@ -437,42 +460,24 @@ const handleSubmit = async () => {
     if (form.file) {
       formData.append('file', form.file)
     }
-    // console.log("formData")
-    // for(let [key, value] of formData.entries()){
-    //   console.log(key, ':', value)
-    // }
-    // return;
-    try {
-      // 使用更长的超时时间处理上传请求
-      const [response] = await Promise.all([
-        request.post('/api/tasks', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          },
-          timeout: 60000,  // 针对上传请求设置 60 秒超时
-          onUploadProgress: (progressEvent) => {
-            // 可以在这里添加上传进度处理
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-            console.log('上传进度:', percentCompleted)
-            // TODO: 可以添加进度条显示
-          }
-        }),
-        minDelay
-      ])
-      
-      ElMessage.success('任务创建成功')
-      router.push('/tasks')
-    } catch (error) {
-      if (error.code === 'ECONNABORTED') {
-        ElMessage.error('文件上传超时，请重试')
-      } else if (error.response?.status === 413) {
-        ElMessage.error('文件大小超出服务器限制')
-      } else {
-        ElMessage.error(error.response?.data?.message || '创建任务失败，请重试')
-      }
-    }
+
+    const response = await request.post('/api/tasks', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      timeout: 60000
+    })
+    
+    ElMessage.success('任务创建成功')
+    router.push('/tasks')
   } catch (error) {
-    ElMessage.error('表单验证失败，请检查输入')
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error('文件上传超时，请重试')
+    } else if (error.response?.status === 413) {
+      ElMessage.error('文件大小超出服务器限制')
+    } else {
+      ElMessage.error(error.response?.data?.message || '创建任务失败，请重试')
+    }
   } finally {
     loading.value = false
   }
@@ -499,8 +504,8 @@ const cropImage = () => {
   })
 }
 
-// 修改压缩函数，添加日志
-const compressImage = async (dataUrl, maxSize = 100 * 1024) => {
+// 修改压缩函数，目标大小改为 200KB
+const compressImage = async (dataUrl, maxSize = 200 * 1024) => {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
@@ -510,21 +515,14 @@ const compressImage = async (dataUrl, maxSize = 100 * 1024) => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
       
-      // 计算合适的输出尺寸
+      // 计算等比例缩放后的尺寸
       let outputWidth = img.width
       let outputHeight = img.height
       
-      // 如果原始尺寸大于 1000x600，才进行缩放
-      if (img.width > 1000 || img.height > 600) {
-        if (img.width / img.height > 5/3) {
-          // 宽度超出更多，以宽度为基准
-          outputWidth = 1000
-          outputHeight = Math.round(1000 * (img.height / img.width))
-        } else {
-          // 高度超出更多，以高度为基准
-          outputHeight = 600
-          outputWidth = Math.round(600 * (img.width / img.height))
-        }
+      // 如果宽度大于 1000px，等比例缩小
+      if (outputWidth > 1000) {
+        outputHeight = Math.round((1000 * outputHeight) / outputWidth)
+        outputWidth = 1000
       }
       
       canvas.width = outputWidth
@@ -534,7 +532,7 @@ const compressImage = async (dataUrl, maxSize = 100 * 1024) => {
       
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       
-      // 递归压缩
+      // 递归压缩质量直到文件大小符合要求
       const compress = () => {
         const base64 = canvas.toDataURL('image/jpeg', quality)
         const blob = base64ToBlob(base64)
@@ -587,8 +585,6 @@ const handleCropCancel = () => {
   }
 }
 
-const userStore = useUserStore()
-
 // 添加初始化函数
 const initData = async () => {
   try {
@@ -601,6 +597,34 @@ const initData = async () => {
 onMounted(() => {
   initData()
 })
+
+// 添加积分相关的响应式变量
+const totalPoints = ref(0)
+const hasEnoughPoints = ref(true)
+
+// 修改计算积分的函数，分为两个版本：实时计算和失焦检查
+const calculatePoints = async (showWarning = false) => {
+  try {
+    if (!userStore.messagePoints) {
+      await userStore.fetchMessagePoints()
+    }
+    if (!userStore.userInfo.balance) {
+      await userStore.fetchUserProfile()
+    }
+    
+    const messageType = '普通消息'
+    const pointsPerMessage = userStore.getMessageTypePoints(messageType)
+    totalPoints.value = numberCount.value * pointsPerMessage // 使用 numberCount
+    
+    hasEnoughPoints.value = userStore.userBalance >= totalPoints.value
+    
+    if (showWarning && !hasEnoughPoints.value) {
+      ElMessage.warning(`余额不足！发送${numberCount.value}条${messageType}需要${totalPoints.value}积分，当前余额${userStore.userBalance}积分`)
+    }
+  } catch (error) {
+    console.error('计算积分失败:', error)
+  }
+}
 </script> 
 
 <style scoped>
@@ -1146,5 +1170,34 @@ video::-webkit-media-controls-timeline {
   to {
     transform: rotate(360deg);
   }
+}
+
+.points-info {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--el-color-info-light-9);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  
+  &.is-warning {
+    background: var(--el-color-danger-light-9);
+  }
+  
+  .el-icon {
+    font-size: 16px;
+    color: var(--el-color-info);
+  }
+  
+  &.is-warning .el-icon {
+    color: var(--el-color-danger);
+  }
+}
+
+.el-tag {
+  margin-left: 8px;
 }
 </style>

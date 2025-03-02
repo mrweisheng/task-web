@@ -19,154 +19,159 @@
         <div class="stat-value">
           {{ stats[type.key] }}
         </div>
-        <div class="stat-label">个任务</div>
+        <div class="stat-label">
+          {{ type.key === 'balance' ? '积分' : '个任务' }}
+        </div>
       </el-card>
     </div>
 
-    <!-- 用户信息卡片 -->
-    <el-card class="user-profile" 
-      :class="{ 'is-error': !userStore.user }"
-      v-loading="loading"
-    >
-      <div class="profile-header">
-        <div class="avatar-wrapper">
-          <el-avatar :size="64" :icon="User" class="user-avatar" />
-          <div class="online-status" />
-        </div>
-        <div class="user-info">
-          <h3 class="nickname">{{ userStore.userInfo.nickname || '未知用户' }}</h3>
-          <p class="username">@{{ userStore.userInfo.username || '--' }}</p>
-        </div>
-      </div>
-      
-      <div class="profile-stats">
-        <div class="completion-chart">
-          <!-- 左侧环形图表 -->
-          <div class="chart-container">
-            <el-progress
-              type="circle"
-              :percentage="calculateCompletionRate"
-              :stroke-width="10"
-              :width="80"
-              :show-text="false"
-              :color="progressColor"
-            />
-            <div class="chart-center">
-              <span class="rate-value">{{ calculateCompletionRate }}%</span>
-            </div>
+    <!-- 下方卡片区域 -->
+    <div class="info-cards">
+      <!-- 用户信息卡片 -->
+      <el-card class="user-profile" 
+        :class="{ 'is-error': !userStore.user }"
+        v-loading="loading"
+      >
+        <div class="profile-header">
+          <div class="avatar-wrapper">
+            <el-avatar :size="64" :icon="User" class="user-avatar" />
+            <div class="online-status" />
           </div>
-          
-          <!-- 右侧说明 -->
-          <div class="chart-info">
-            <div class="info-header">
-              <span class="info-title">完成率</span>
-              <el-tooltip content="已完成任务占总任务的百分比" placement="top">
-                <el-icon><InfoFilled /></el-icon>
-              </el-tooltip>
-            </div>
-            <div class="info-details">
-              <div class="detail-item">
-                <div class="item-dot completed"></div>
-                <span class="item-label">已完成</span>
-                <span class="item-value">{{ stats.completedTasks }}</span>
-              </div>
-              <div class="detail-item">
-                <div class="item-dot total"></div>
-                <span class="item-label">总任务</span>
-                <span class="item-value">{{ stats.totalTasks }}</span>
+          <div class="user-info">
+            <h3 class="nickname">{{ userStore.userInfo.nickname || '未知用户' }}</h3>
+            <p class="username">@{{ userStore.userInfo.username || '--' }}</p>
+          </div>
+        </div>
+        
+        <div class="profile-stats">
+          <div class="completion-chart">
+            <!-- 左侧环形图表 -->
+            <div class="chart-container">
+              <el-progress
+                type="circle"
+                :percentage="calculateCompletionRate"
+                :stroke-width="10"
+                :width="80"
+                :show-text="false"
+                :color="progressColor"
+              />
+              <div class="chart-center">
+                <span class="rate-value">{{ calculateCompletionRate }}%</span>
               </div>
             </div>
+            
+            <!-- 右侧说明 -->
+            <div class="chart-info">
+              <div class="info-header">
+                <span class="info-title">完成率</span>
+                <el-tooltip content="已完成任务占总任务的百分比" placement="top">
+                  <el-icon><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
+              <div class="info-details">
+                <div class="detail-item">
+                  <div class="item-dot completed"></div>
+                  <span class="item-label">已完成</span>
+                  <span class="item-value">{{ stats.completedTasks }}</span>
+                </div>
+                <div class="detail-item">
+                  <div class="item-dot total"></div>
+                  <span class="item-label">总任务</span>
+                  <span class="item-value">{{ stats.totalTasks }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="quick-actions">
-        <el-button type="primary" @click="router.push('/create-normal-message')">
-          <el-icon><Plus /></el-icon>
-          创建新任务
-        </el-button>
-        <el-button @click="router.push('/tasks')">
-          <el-icon><List /></el-icon>
-          查看所有任务
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 最新任务卡片 -->
-    <el-card class="recent-task-card" v-loading="loading">
-      <template #header>
-        <div class="card-header">
-          <div class="header-left">
-            <span class="title">最新任务</span>
-            <el-tag size="small" type="info" effect="plain" v-if="latestTask">
-              {{ formatDate(latestTask.createTime) }}
-            </el-tag>
-            <el-tag size="small" type="info" effect="plain" v-else>
-              暂无数据
-            </el-tag>
-          </div>
-          <el-button link @click="router.push('/tasks')">
-            查看全部
-            <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+        <div class="quick-actions">
+          <el-button type="primary" @click="router.push('/create-normal-message')">
+            <el-icon><Plus /></el-icon>
+            创建新任务
+          </el-button>
+          <el-button @click="router.push('/tasks')">
+            <el-icon><List /></el-icon>
+            查看所有任务
           </el-button>
         </div>
-      </template>
+      </el-card>
 
-      <el-empty v-if="!latestTask" description="暂无任务" />
-      
-      <div v-else class="task-item">
-        <div class="task-circles">
-          <!-- 状态圆圈 -->
-          <div class="circle-item status">
-            <el-tag 
-              :type="getStatusType(latestTask.status)" 
-              class="status-tag"
-              :effect="latestTask.status === '已完成' ? 'dark' : 'light'"
-            >
-              <el-icon class="status-icon">
-                <Check v-if="latestTask.status === '已完成'" />
-                <Loading v-else-if="latestTask.status === '处理中'" />
-                <Warning v-else />
-              </el-icon>
-            </el-tag>
-            <span class="circle-label">{{ getStatusText(latestTask.status) }}</span>
-          </div>
-
-          <!-- 媒体类型圆圈 -->
-          <div class="circle-item media">
-            <div class="circle-icon">
-              <el-icon>
-                <VideoCamera v-if="latestTask.media_type === 'video'" />
-                <Picture v-else-if="latestTask.media_type === 'image'" />
-                <Document v-else />
-              </el-icon>
+      <!-- 最新任务卡片 -->
+      <el-card class="recent-task-card" v-loading="loading">
+        <template #header>
+          <div class="card-header">
+            <div class="header-left">
+              <span class="title">最新任务</span>
+              <el-tag size="small" type="info" effect="plain" v-if="latestTask">
+                {{ formatDate(latestTask.createTime) }}
+              </el-tag>
+              <el-tag size="small" type="info" effect="plain" v-else>
+                暂无数据
+              </el-tag>
             </div>
-            <span class="circle-label">{{ getMediaTypeText(latestTask.media_type) }}</span>
+            <el-button link @click="router.push('/tasks')">
+              查看全部
+              <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+            </el-button>
+          </div>
+        </template>
+
+        <el-empty v-if="!latestTask" description="暂无任务" />
+        
+        <div v-else class="task-item">
+          <div class="task-circles">
+            <!-- 状态圆圈 -->
+            <div class="circle-item status">
+              <el-tag 
+                :type="getStatusType(latestTask.status)" 
+                class="status-tag"
+                :effect="latestTask.status === '已完成' ? 'dark' : 'light'"
+              >
+                <el-icon class="status-icon">
+                  <Check v-if="latestTask.status === '已完成'" />
+                  <Loading v-else-if="latestTask.status === '处理中'" />
+                  <Warning v-else />
+                </el-icon>
+              </el-tag>
+              <span class="circle-label">{{ getStatusText(latestTask.status) }}</span>
+            </div>
+
+            <!-- 媒体类型圆圈 -->
+            <div class="circle-item media">
+              <div class="circle-icon">
+                <el-icon>
+                  <VideoCamera v-if="latestTask.media_type === 'video'" />
+                  <Picture v-else-if="latestTask.media_type === 'image'" />
+                  <Document v-else />
+                </el-icon>
+              </div>
+              <span class="circle-label">{{ getMediaTypeText(latestTask.media_type) }}</span>
+            </div>
+
+            <!-- 号码数量圆圈 -->
+            <div class="circle-item numbers">
+              <div class="circle-value">{{ latestTask.phoneNumbers?.length || 0 }}</div>
+              <span class="circle-label">个号码</span>
+            </div>
           </div>
 
-          <!-- 号码数量圆圈 -->
-          <div class="circle-item numbers">
-            <div class="circle-value">{{ latestTask.phoneNumbers?.length || 0 }}</div>
-            <span class="circle-label">个号码</span>
+          <!-- 消息内容方块 -->
+          <div class="message-box">
+            <div class="message-content">
+              <p class="message-text">{{ latestTask.content }}</p>
+              <!-- 添加超链预览显示 -->
+              <div v-if="latestTask.is_linkpreview && latestTask.linkpreview" class="link-preview">
+                <el-icon><Link /></el-icon>
+                <a :href="latestTask.linkpreview" target="_blank" rel="noopener noreferrer">
+                  {{ latestTask.linkpreview }}
+                </a>
+              </div>
+              <span class="message-time">{{ formatDate(latestTask.createTime) }}</span>
+            </div>
           </div>
         </div>
-
-        <!-- 消息内容方块 -->
-        <div class="message-box">
-          <div class="message-content">
-            <p class="message-text">{{ latestTask.content }}</p>
-            <!-- 添加超链预览显示 -->
-            <div v-if="latestTask.is_linkpreview && latestTask.linkpreview" class="link-preview">
-              <el-icon><Link /></el-icon>
-              <a :href="latestTask.linkpreview" target="_blank" rel="noopener noreferrer">
-                {{ latestTask.linkpreview }}
-              </a>
-            </div>
-            <span class="message-time">{{ formatDate(latestTask.createTime) }}</span>
-          </div>
-        </div>
-      </div>
-    </el-card>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -175,7 +180,7 @@ import { ref, computed, onMounted, onUnmounted, h, markRaw, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { 
-  DataLine, Calendar, Check, User, Timer, 
+  DataLine, Calendar, Check, User, Timer, Money, 
   TrendCharts, Plus, List, ArrowRight, Phone,
   Picture, VideoCamera, Loading, Document, Clock, VideoPlay, InfoFilled, Link
 } from '@element-plus/icons-vue'
@@ -193,7 +198,8 @@ const latestTask = ref(null)
 const stats = ref({
   totalTasks: 0,
   todayTasks: 0,
-  completedTasks: 0
+  completedTasks: 0,
+  balance: 0
 })
 
 // 添加监听器以调试
@@ -205,7 +211,8 @@ watch(stats, (newVal) => {
 const statTypes = [
   { key: 'totalTasks', label: '总任务数', icon: markRaw(DataLine) },
   { key: 'todayTasks', label: '今日任务', icon: markRaw(Calendar) },
-  { key: 'completedTasks', label: '已完成任务', icon: markRaw(Check) }
+  { key: 'completedTasks', label: '已完成任务', icon: markRaw(Check) },
+  { key: 'balance', label: '账户余额', icon: markRaw(Money) }
 ]
 
 // 添加加载图标配置
@@ -265,7 +272,8 @@ const fetchStats = async () => {
       stats.value = {
         totalTasks: response.totalTasks || 0,
         todayTasks: response.todayTasks || 0,
-        completedTasks: response.completedTasks || 0
+        completedTasks: response.completedTasks || 0,
+        balance: response.balance || 0
       }
       console.log('更新后的统计数据:', stats.value)  // 用于调试
     }
@@ -275,7 +283,8 @@ const fetchStats = async () => {
     stats.value = {
       totalTasks: 0,
       todayTasks: 0,
-      completedTasks: 0
+      completedTasks: 0,
+      balance: 0
     }
   }
 }
@@ -390,18 +399,30 @@ const progressColor = computed(() => {
 
 <style scoped>
 .dashboard-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   padding: 24px;
   animation: fade-in 0.5s ease;
 }
 
 .stat-cards {
-  grid-column: span 3;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
+  width: 100%;
+}
+
+.info-cards {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  width: 100%;
+}
+
+.user-profile,
+.recent-task-card {
+  width: 100%;
 }
 
 .stat-card {
@@ -424,6 +445,10 @@ const progressColor = computed(() => {
   
   &.completedTasks {
     background: linear-gradient(135deg, #E6A23C 0%, #f3d19e 100%);
+  }
+  
+  &.balance {
+    background: linear-gradient(135deg, #F56C6C 0%, #fab6b6 100%);
   }
   
   &:hover {
@@ -517,6 +542,19 @@ const progressColor = computed(() => {
       background: linear-gradient(120deg, var(--el-color-warning), #E6A23C);
     }
   }
+
+  /* 为余额卡片添加特殊样式 */
+  &.balance {
+    background: linear-gradient(135deg, #F56C6C 0%, #fab6b6 100%);
+  }
+
+  /* 为余额卡片添加特殊强调色 */
+  &.balance {
+    border-left: 4px solid var(--el-color-danger);
+    .stat-value {
+      background: linear-gradient(120deg, var(--el-color-danger), #F56C6C);
+    }
+  }
 }
 
 /* 优化动画效果 */
@@ -572,7 +610,8 @@ const progressColor = computed(() => {
 }
 
 .user-profile {
-  grid-column: span 1;
+  grid-column: auto;
+  min-width: 0;
   
   .profile-header {
     display: flex;
@@ -672,7 +711,8 @@ const progressColor = computed(() => {
 }
 
 .recent-task-card {
-  grid-column: span 2;
+  grid-column: auto;
+  min-width: 0;
   
   .card-header {
     display: flex;
@@ -1198,6 +1238,13 @@ const progressColor = computed(() => {
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+/* 在小屏幕下调整为垂直布局 */
+@media (max-width: 768px) {
+  .info-cards {
+    grid-template-columns: 1fr;
   }
 }
 </style> 

@@ -1,5 +1,12 @@
 <template>
   <div class="tasks-container">
+    <div v-if="deleteLoading" class="fullscreen-loading">
+      <div class="loading-content">
+        <el-icon class="loading-icon"><Loading /></el-icon>
+        <p class="loading-text">正在删除任务...</p>
+      </div>
+    </div>
+
     <div class="page-header">
       <h2>我的任务</h2>
       <el-button type="primary" @click="router.push('/create-task')">
@@ -7,8 +14,8 @@
       </el-button>
     </div>
 
-    <div class="tasks-grid">
-      <el-empty v-if="!tasks.length" description="暂无任务" />
+    <div class="tasks-grid" v-loading="loading" element-loading-text="加载中...">
+      <el-empty v-if="!loading && !tasks.length" description="暂无任务" />
       
       <el-card
         v-for="task in tasks"
@@ -21,9 +28,18 @@
             <el-tag :type="getStatusType(task.status)">
               {{ getStatusText(task.status) }}
             </el-tag>
-            <span class="create-time">
-              {{ formatDate(task.createTime) }}
-            </span>
+            <div class="header-actions">
+              <span class="create-time">
+                {{ formatDate(task.createTime) }}
+              </span>
+              <el-button 
+                type="danger" 
+                link
+                @click="handleDelete(task)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </div>
           </div>
         </template>
 
@@ -107,12 +123,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Phone, MagicStick, Link } from '@element-plus/icons-vue'
+import { Plus, Phone, MagicStick, Link, Delete, Loading } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
+const loading = ref(false)
+const deleteLoading = ref(false)
 const tasks = ref([])
 
 const getStatusType = (status) => {
@@ -139,6 +157,7 @@ const formatDate = (date) => {
 }
 
 const fetchTasks = async () => {
+  loading.value = true
   try {
     const response = await request.get('/api/tasks')
     tasks.value = response.map(task => ({
@@ -155,6 +174,8 @@ const fetchTasks = async () => {
     }))
   } catch (error) {
     ElMessage.error(error.message)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -165,6 +186,31 @@ const handleTaskComplete = async (taskId) => {
     fetchTasks()
   } catch (error) {
     ElMessage.error(error.message)
+  }
+}
+
+const handleDelete = async (task) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这个任务吗？此操作不可恢复。',
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    deleteLoading.value = true
+    await request.delete(`/api/tasks/${task.id}`)
+    ElMessage.success('任务删除成功')
+    await fetchTasks()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.response?.data?.message || '删除任务失败')
+    }
+  } finally {
+    deleteLoading.value = false
   }
 }
 
@@ -212,6 +258,8 @@ onMounted(() => {
   gap: 24px;
   margin-bottom: 24px;
   padding: 4px;
+  position: relative;
+  min-height: 200px;
 }
 
 .task-card {
@@ -410,5 +458,76 @@ onMounted(() => {
       text-decoration: underline;
     }
   }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:deep(.el-button--danger.el-button--link) {
+  padding: 4px;
+  border-radius: 4px;
+  
+  &:hover {
+    background-color: var(--el-color-danger-light-9);
+    color: var(--el-color-danger);
+  }
+  
+  .el-icon {
+    font-size: 16px;
+  }
+}
+
+/* 自定义加载样式 */
+:deep(.el-loading-mask) {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+:deep(.el-loading-text) {
+  font-size: 14px;
+  margin-top: 8px;
+  color: var(--primary-color);
+}
+
+.fullscreen-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-content {
+  text-align: center;
+  padding: 24px 48px;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.loading-icon {
+  font-size: 24px;
+  color: var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style> 
