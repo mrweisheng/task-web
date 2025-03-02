@@ -480,7 +480,7 @@ const handleSubmit = async () => {
     try {
       // 使用更长的超时时间处理上传请求
       const [response] = await Promise.all([
-        request.post('/api/tasks', formData, {
+        request.post('/taskapi/tasks', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           },

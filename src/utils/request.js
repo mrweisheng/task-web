@@ -4,7 +4,7 @@ import router from '../router'
 import CryptoJS from 'crypto-js' // 需要安装此依赖
 
 const request = axios.create({
-  // baseURL: 'http://localhost:3000',
+  // baseURL: 'http://localhost:5000',
   baseURL: 'http://104.37.187.30:5000',
   // baseURL: 'http://8.149.132.70/task-web',  // 移除3000端口，通过nginx转发
 

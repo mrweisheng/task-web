@@ -39,7 +39,7 @@ export const useUserStore = defineStore('user', {
     // 获取消息积分配置
     async fetchMessagePoints() {
       try {
-        const response = await request.get('/api/user/message-points')
+        const response = await request.get('/taskapi/user/message-points')
         if (response?.data) {
           this.messagePoints = response.data.reduce((acc, curr) => {
             acc[curr.message_type] = {
@@ -59,7 +59,7 @@ export const useUserStore = defineStore('user', {
     // 修改获取用户信息的方法，确保返回余额信息
     async fetchUserProfile() {
       try {
-        const response = await request.get('/api/user/profile')
+        const response = await request.get('/taskapi/user/profile')
         if (response) {
           this.userInfo = response
           return response

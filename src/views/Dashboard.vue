@@ -230,7 +230,7 @@ const icons = {
 const fetchLatestTask = async () => {
   try {
     console.log('开始获取最新任务')
-    const response = await request.get('/api/tasks/latest')
+    const response = await request.get('/taskapi/tasks/latest')
     console.log('最新任务响应:', response)
     
     if (response) {
@@ -264,7 +264,7 @@ const fetchLatestTask = async () => {
 // 获取统计数据
 const fetchStats = async () => {
   try {
-    const response = await request.get('/api/stats')
+    const response = await request.get('/taskapi/stats')
     console.log('统计数据响应:', response)  // 用于调试
     
     if (response) {

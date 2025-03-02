@@ -553,7 +553,7 @@ const handleSubmit = async () => {
     }
     formData.append('message_type', '超链消息')
     // 发送请求
-    await request.post('/api/tasks', formData, {
+    await request.post('/taskapi/tasks', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

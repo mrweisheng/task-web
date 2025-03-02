@@ -159,7 +159,7 @@ const formatDate = (date) => {
 const fetchTasks = async () => {
   loading.value = true
   try {
-    const response = await request.get('/api/tasks')
+    const response = await request.get('/taskapi/tasks')
     tasks.value = response.map(task => ({
       id: task.id,
       content: task.content,
@@ -181,7 +181,7 @@ const fetchTasks = async () => {
 
 const handleTaskComplete = async (taskId) => {
   try {
-    await request.put(`/api/tasks/${taskId}/complete`)
+    await request.put(`/taskapi/tasks/${taskId}/complete`)
     ElMessage.success('任务已标记为完成')
     fetchTasks()
   } catch (error) {
@@ -202,7 +202,7 @@ const handleDelete = async (task) => {
     )
     
     deleteLoading.value = true
-    await request.delete(`/api/tasks/${task.id}`)
+    await request.delete(`/taskapi/tasks/${task.id}`)
     ElMessage.success('任务删除成功')
     await fetchTasks()
   } catch (error) {

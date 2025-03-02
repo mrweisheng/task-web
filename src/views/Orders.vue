@@ -220,7 +220,7 @@ const fetchOrders = async () => {
       ...filters
     }
     
-    const response = await request.get('/api/user/orders', { params })
+    const response = await request.get('/taskapi/user/orders', { params })
     orders.value = response.data.orders
     stats.value = response.data.stats
     pagination.total = response.data.pagination.total
@@ -235,7 +235,7 @@ const fetchOrders = async () => {
 // 获取订单详情
 const showOrderDetail = async (order) => {
   try {
-    const response = await request.get(`/api/user/orders/${order.id}`)
+    const response = await request.get(`/taskapi/user/orders/${order.id}`)
     currentOrder.value = response.data
     detailVisible.value = true
   } catch (error) {

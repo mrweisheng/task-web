@@ -79,7 +79,7 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    const response = await request.post('/api/user/login', {
+    const response = await request.post('/taskapi/user/login', {
       username: form.username,
       password: form.password
     })
