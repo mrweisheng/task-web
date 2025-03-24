@@ -4,11 +4,7 @@ import router from '../router'
 import CryptoJS from 'crypto-js' // 需要安装此依赖
 
 const request = axios.create({
-  // baseURL: 'http://localhost:5000',
-  baseURL: 'http://104.37.187.30:5000',
-  // baseURL: 'http://8.149.132.70/task-web',  // 移除3000端口，通过nginx转发
-
-  // baseURL: 'https://task-server-zyir.onrender.com',  // master 分支用这个/
+  baseURL: 'http://104.37.187.30:9001', // 美国服务器
   timeout: 30000,
   maxContentLength: 50 * 1024 * 1024, // 限制请求大小为 50MB
   maxBodyLength: 50 * 1024 * 1024,
