@@ -4,7 +4,7 @@ import router from '../router'
 import CryptoJS from 'crypto-js' // 需要安装此依赖
 
 const request = axios.create({
-  baseURL: 'http://104.37.187.30:9001', // 美国服务器
+  baseURL: 'http://104.37.187.30:9002', // 美国服务器
   timeout: 30000,
   maxContentLength: 50 * 1024 * 1024, // 限制请求大小为 50MB
   maxBodyLength: 50 * 1024 * 1024,

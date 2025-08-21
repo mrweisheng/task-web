@@ -4,7 +4,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/task-web/',
+  base: '/shu-task/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
